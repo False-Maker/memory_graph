@@ -9,6 +9,8 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.cache/
+.vendor/
 env/
 venv/
 .venv/
@@ -25,6 +27,7 @@ build/
 # Test
 .pytest_cache/
 .ruff_cache/
+test-results/
 
 # Logs
 *.log
@@ -36,15 +39,24 @@ build/
 !scripts/deployment/.env.intranet.example
 config/settings.yaml
 settings.json
+.codex
+.env.intranet
 
 # Internal planning / evidence artifacts
 .sisyphus/
+frontend/.sisyphus/
 docs/Eleanor*.md
+*-审查报告.md
+整体工程质量评审*
+task-*-manual-*.md
 
 # Generated build artifacts
 assets/
 frontend/dist/
+frontend/src-react/dist/
+frontend/api/dist/
 frontend/test-results/
+**/node_modules/
 
 # Local runtime/test scratch
 MagicMock/
@@ -55,4 +67,6 @@ data/transactions/
 data/faiss/
 data/server_id
 data/dbms/
+data/import-runs.json
+data/sync-sources.json
 data/

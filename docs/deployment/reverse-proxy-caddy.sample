@@ -1,0 +1,10 @@
+memory-graph.example.com {
+    encode zstd gzip
+
+    reverse_proxy /mcp* 127.0.0.1:8001 {
+        header_up Authorization {header.Authorization}
+        flush_interval -1
+    }
+
+    reverse_proxy 127.0.0.1:8000
+}

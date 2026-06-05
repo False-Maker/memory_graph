@@ -1,0 +1,65 @@
+name: Focused Real Smoke Upload
+description: Upload the standard evidence bundle for a focused real smoke run.
+
+inputs:
+  artifact-name:
+    description: Artifact name for actions/upload-artifact
+    required: true
+  evidence-prefix:
+    description: Evidence filename prefix such as task-24-search-navigation-real
+    required: true
+  include-seed:
+    description: Whether to include the standard seed json artifact
+    required: false
+    default: 'true'
+  include-default-png:
+    description: Whether to include the standard evidence-prefix.png screenshot artifact
+    required: false
+    default: 'true'
+  extra-paths:
+    description: Optional newline-delimited additional artifact paths
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Build focused smoke artifact path list
+      id: paths
+      shell: bash
+      run: |
+        paths=(
+          ".sisyphus/evidence/${{ inputs.evidence-prefix }}-summary.txt"
+          ".sisyphus/evidence/${{ inputs.evidence-prefix }}-summary.json"
+          ".sisyphus/evidence/${{ inputs.evidence-prefix }}-http.json"
+          ".sisyphus/evidence/${{ inputs.evidence-prefix }}-error.txt"
+          ".sisyphus/evidence/${{ inputs.evidence-prefix }}-backend.log"
+        )
+
+        if [[ "${{ inputs.include-seed }}" == "true" ]]; then
+          paths+=(".sisyphus/evidence/${{ inputs.evidence-prefix }}-seed.json")
+        fi
+
+        if [[ "${{ inputs.include-default-png }}" == "true" ]]; then
+          paths+=(".sisyphus/evidence/${{ inputs.evidence-prefix }}.png")
+        fi
+
+        while IFS= read -r extra_path; do
+          if [[ -n "$extra_path" ]]; then
+            paths+=("$extra_path")
+          fi
+        done <<< "${{ inputs.extra-paths }}"
+
+        {
+          echo 'artifact_paths<<EOF'
+          printf '%s\n' "${paths[@]}"
+          echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Upload focused smoke evidence
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        if-no-files-found: warn
+        path: ${{ steps.paths.outputs.artifact_paths }}

@@ -1,0 +1,31 @@
+name: Focused Real Smoke Compare
+description: Preserve committed evidence sample, run a focused real smoke script, then compare fresh evidence against the committed sample.
+
+inputs:
+  evidence-prefix:
+    description: Evidence filename prefix such as task-24-search-navigation-real
+    required: true
+  run-script:
+    description: frontend npm script such as qa:real-stack-smoke:search:navigation
+    required: true
+  task-id:
+    description: Logical task id such as task-24
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Preserve committed evidence sample
+      shell: bash
+      run: |
+        mkdir -p /tmp/committed-evidence
+        cp ".sisyphus/evidence/${{ inputs.evidence-prefix }}-summary.json" /tmp/committed-evidence/
+        cp ".sisyphus/evidence/${{ inputs.evidence-prefix }}-http.json" /tmp/committed-evidence/
+
+    - name: Run focused real smoke
+      shell: bash
+      run: npm --prefix frontend run "${{ inputs.run-script }}"
+
+    - name: Compare fresh evidence against committed sample
+      shell: bash
+      run: npm --prefix frontend run qa:focused-real-smoke:compare -- --task "${{ inputs.task-id }}" --baseline-dir /tmp/committed-evidence --fresh-dir .sisyphus/evidence

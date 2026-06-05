@@ -1,0 +1,494 @@
+name: Contract Guards
+
+'on':
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - '.github/workflows/contract-guards.yml'
+      - '.github/actions/focused-real-smoke-compare/**'
+      - '.github/actions/focused-real-smoke-upload/**'
+      - '.github/workflows/focused-real-smoke-reusable.yml'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/api/package.json'
+      - 'frontend/api/package-lock.json'
+      - 'frontend/src-react/pages/**'
+      - 'frontend/src-react/qa/**'
+      - 'src/api/**'
+      - 'src/core/config.py'
+      - 'src/core/secret_store.py'
+      - 'scripts/generate_api_docs.py'
+      - 'tests/test_api_docs.py'
+      - 'tests/test_config.py'
+      - 'tests/test_config_api.py'
+      - 'tests/test_query_api.py'
+      - 'tests/test_query_trace.py'
+      - 'tests/test_retrieval_facade.py'
+      - 'tests/test_mcp_server.py'
+      - 'tests/test_mcp_service.py'
+      - 'tests/test_mcp_integration.py'
+      - 'tests/test_secret_store.py'
+      - 'docs/API.md'
+      - 'docs/ARCHITECTURE.md'
+      - 'docs/DEVELOPMENT.md'
+      - 'docs/ROADMAP.md'
+      - 'docs/Product_Engineering_Baseline.md'
+      - 'docs/claude-review-followup.md'
+      - 'README.md'
+      - '.sisyphus/evidence/**'
+      - 'config/settings.example.yaml'
+      - 'requirements.txt'
+      - 'src/core/query_trace.py'
+      - 'src/core/retrieval_facade.py'
+      - 'src/mcp/**'
+  pull_request:
+    paths:
+      - '.github/workflows/contract-guards.yml'
+      - '.github/actions/focused-real-smoke-compare/**'
+      - '.github/actions/focused-real-smoke-upload/**'
+      - '.github/workflows/focused-real-smoke-reusable.yml'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/api/package.json'
+      - 'frontend/api/package-lock.json'
+      - 'frontend/src-react/pages/**'
+      - 'frontend/src-react/qa/**'
+      - 'src/api/**'
+      - 'src/core/config.py'
+      - 'src/core/secret_store.py'
+      - 'scripts/generate_api_docs.py'
+      - 'tests/test_api_docs.py'
+      - 'tests/test_config.py'
+      - 'tests/test_config_api.py'
+      - 'tests/test_query_api.py'
+      - 'tests/test_query_trace.py'
+      - 'tests/test_retrieval_facade.py'
+      - 'tests/test_mcp_server.py'
+      - 'tests/test_mcp_service.py'
+      - 'tests/test_mcp_integration.py'
+      - 'tests/test_secret_store.py'
+      - 'docs/API.md'
+      - 'docs/ARCHITECTURE.md'
+      - 'docs/DEVELOPMENT.md'
+      - 'docs/ROADMAP.md'
+      - 'docs/Product_Engineering_Baseline.md'
+      - 'docs/claude-review-followup.md'
+      - 'README.md'
+      - '.sisyphus/evidence/**'
+      - 'config/settings.example.yaml'
+      - 'requirements.txt'
+      - 'src/core/query_trace.py'
+      - 'src/core/retrieval_facade.py'
+      - 'src/mcp/**'
+
+concurrency:
+  group: contract-guards-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            frontend/api/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
+
+      - name: Install sidecar dependencies
+        run: npm --prefix frontend/api ci
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Verify startup/runtime contract guards
+        run: npm --prefix frontend run test:startup-contract
+
+      - name: Verify import/runtime contract guards
+        run: npm --prefix frontend run test:import-contract
+
+      - name: Verify settings/frontend contract guards
+        run: npm --prefix frontend run test:settings-contract
+
+      - name: Verify search/graph/communities/memories contract guards
+        run: npm --prefix frontend run test:mainline-contract
+
+      - name: Verify API docs drift guard
+        run: python3 scripts/generate_api_docs.py --check
+
+      - name: Run focused Python contract tests
+        run: python3 -m pytest tests/test_api_docs.py tests/test_config_api.py tests/test_config.py tests/test_secret_store.py tests/test_query_api.py tests/test_query_trace.py tests/test_retrieval_facade.py tests/test_mcp_server.py tests/test_mcp_service.py tests/test_mcp_integration.py
+
+      - name: Build frontend
+        run: npm --prefix frontend run build
+
+      - name: Build sidecar
+        run: npm --prefix frontend/api run build
+
+  # BEGIN generated focused real smoke jobs
+  settings-secret-store-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: settings-secret-store-real-smoke-evidence
+      evidence-prefix: task-22-settings-secret-store-real
+      run-script: qa:real-stack-smoke:settings:secret-store
+      task-id: task-22
+      include-seed: 'false'
+
+  import-diagnostics-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: import-diagnostics-real-smoke-evidence
+      evidence-prefix: task-23-import-diagnostics-real
+      run-script: qa:real-stack-smoke:import:diagnostics
+      task-id: task-23
+      include-seed: 'false'
+
+  official-collector-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: official-collector-real-smoke-evidence
+      evidence-prefix: task-61-official-collector-matrix
+      run-script: qa:real-stack-smoke:collectors:official
+      task-id: task-61
+      include-seed: 'false'
+      include-default-png: 'false'
+      extra-paths: |
+        .sisyphus/evidence/task-61-official-collector-matrix-http.json
+        .sisyphus/evidence/task-61-official-collector-matrix-backend.log
+
+  search-navigation-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-navigation-real-smoke-evidence
+      evidence-prefix: task-24-search-navigation-real
+      run-script: qa:real-stack-smoke:search:navigation
+      task-id: task-24
+
+  memory-community-detail-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: memory-community-detail-real-smoke-evidence
+      evidence-prefix: task-25-memory-community-detail-real
+      run-script: qa:real-stack-smoke:memories:communities
+      task-id: task-25
+
+  graph-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: graph-real-smoke-evidence
+      evidence-prefix: task-26-graph-real
+      run-script: qa:real-stack-smoke:graph
+      task-id: task-26
+
+  community-summary-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: community-summary-real-smoke-evidence
+      evidence-prefix: task-27-community-summary-real
+      run-script: qa:real-stack-smoke:communities:summary
+      task-id: task-27
+
+  dashboard-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-real-smoke-evidence
+      evidence-prefix: task-28-dashboard-real
+      run-script: qa:real-stack-smoke:dashboard
+      task-id: task-28
+
+  dashboard-recent-memory-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-recent-memory-failure-real-smoke-evidence
+      evidence-prefix: task-45-dashboard-recent-memory-failure-real
+      run-script: qa:real-stack-smoke:dashboard:recent-memory:failure
+      task-id: task-45
+      include-default-png: 'false'
+      extra-paths: |
+        .sisyphus/evidence/task-45-dashboard-recent-memory-failure-real-stale-detail.png
+        .sisyphus/evidence/task-45-dashboard-recent-memory-failure-real-empty-dashboard.png
+
+  dashboard-recent-memory-write-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-recent-memory-write-real-smoke-evidence
+      evidence-prefix: task-46-dashboard-recent-memory-write-real
+      run-script: qa:real-stack-smoke:dashboard:recent-memory:write-path
+      task-id: task-46
+
+  dashboard-recent-memory-community-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-recent-memory-community-real-smoke-evidence
+      evidence-prefix: task-47-dashboard-recent-memory-community-real
+      run-script: qa:real-stack-smoke:dashboard:recent-memory:community-navigation
+      task-id: task-47
+
+  dashboard-view-all-memories-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-view-all-memories-real-smoke-evidence
+      evidence-prefix: task-48-dashboard-view-all-memories-real
+      run-script: qa:real-stack-smoke:dashboard:view-all:memories
+      task-id: task-48
+
+  dashboard-stat-navigation-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-stat-navigation-real-smoke-evidence
+      evidence-prefix: task-49-dashboard-stat-navigation-real
+      run-script: qa:real-stack-smoke:dashboard:stats-navigation
+      task-id: task-49
+
+  dashboard-stat-graph-empty-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-stat-graph-empty-real-smoke-evidence
+      evidence-prefix: task-50-dashboard-stat-graph-empty-real
+      run-script: qa:real-stack-smoke:dashboard:stats:graph:empty
+      task-id: task-50
+      include-seed: 'false'
+
+  dashboard-stat-communities-empty-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-stat-communities-empty-real-smoke-evidence
+      evidence-prefix: task-51-dashboard-stat-communities-empty-real
+      run-script: qa:real-stack-smoke:dashboard:stats:communities:empty
+      task-id: task-51
+      include-seed: 'false'
+
+  dashboard-stat-memories-empty-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-stat-memories-empty-real-smoke-evidence
+      evidence-prefix: task-52-dashboard-stat-memories-empty-real
+      run-script: qa:real-stack-smoke:dashboard:stats:memories:empty
+      task-id: task-52
+      include-seed: 'false'
+
+  dashboard-stat-memories-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-stat-memories-failure-real-smoke-evidence
+      evidence-prefix: task-53-dashboard-stat-memories-failure-real
+      run-script: qa:real-stack-smoke:dashboard:stats:memories:failure
+      task-id: task-53
+      include-seed: 'false'
+
+  dashboard-stat-communities-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-stat-communities-failure-real-smoke-evidence
+      evidence-prefix: task-54-dashboard-stat-communities-failure-real
+      run-script: qa:real-stack-smoke:dashboard:stats:communities:failure
+      task-id: task-54
+      include-seed: 'false'
+
+  dashboard-stat-graph-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-stat-graph-failure-real-smoke-evidence
+      evidence-prefix: task-55-dashboard-stat-graph-failure-real
+      run-script: qa:real-stack-smoke:dashboard:stats:graph:failure
+      task-id: task-55
+      include-seed: 'false'
+
+  community-summary-llm-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: community-summary-llm-real-smoke-evidence
+      evidence-prefix: task-29-community-summary-llm-real
+      run-script: qa:real-stack-smoke:communities:summary:llm
+      task-id: task-29
+
+  dashboard-search-aggregate-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: dashboard-search-aggregate-real-smoke-evidence
+      evidence-prefix: task-30-dashboard-search-aggregate-real
+      run-script: qa:real-stack-smoke:dashboard:search:aggregate
+      task-id: task-30
+
+  memories-list-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: memories-list-real-smoke-evidence
+      evidence-prefix: task-31-memories-list-real
+      run-script: qa:real-stack-smoke:memories:list
+      task-id: task-31
+
+  memories-write-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: memories-write-real-smoke-evidence
+      evidence-prefix: task-34-memories-write-real
+      run-script: qa:real-stack-smoke:memories:write-path
+      task-id: task-34
+
+  memories-detail-write-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: memories-detail-write-real-smoke-evidence
+      evidence-prefix: task-35-memories-detail-write-real
+      run-script: qa:real-stack-smoke:memories:detail:write-path
+      task-id: task-35
+
+  memories-detail-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: memories-detail-failure-real-smoke-evidence
+      evidence-prefix: task-37-memories-detail-failure-real
+      run-script: qa:real-stack-smoke:memories:detail:failure
+      task-id: task-37
+      include-default-png: 'false'
+      extra-paths: |
+        .sisyphus/evidence/task-37-memories-detail-failure-real-missing.png
+        .sisyphus/evidence/task-37-memories-detail-failure-real-deleted.png
+
+  communities-navigation-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: communities-navigation-real-smoke-evidence
+      evidence-prefix: task-32-communities-navigation-real
+      run-script: qa:real-stack-smoke:communities:navigation
+      task-id: task-32
+
+  communities-detail-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: communities-detail-failure-real-smoke-evidence
+      evidence-prefix: task-38-communities-detail-failure-real
+      run-script: qa:real-stack-smoke:communities:detail:failure
+      task-id: task-38
+      include-default-png: 'false'
+      extra-paths: |
+        .sisyphus/evidence/task-38-communities-detail-failure-real-missing.png
+        .sisyphus/evidence/task-38-communities-detail-failure-real-stale.png
+
+  communities-lineage-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: communities-lineage-failure-real-smoke-evidence
+      evidence-prefix: task-40-communities-lineage-failure-real
+      run-script: qa:real-stack-smoke:communities:lineage:failure
+      task-id: task-40
+
+  communities-data-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: communities-data-failure-real-smoke-evidence
+      evidence-prefix: task-41-communities-data-failure-real
+      run-script: qa:real-stack-smoke:communities:data:failure
+      task-id: task-41
+
+  communities-summary-facet-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: communities-summary-facet-failure-real-smoke-evidence
+      evidence-prefix: task-43-community-summary-facet-failure-real
+      run-script: qa:real-stack-smoke:communities:summary:facet-failure
+      task-id: task-43
+
+  search-source-community-stale-link-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-source-community-stale-link-real-smoke-evidence
+      evidence-prefix: task-39-search-community-stale-link-real
+      run-script: qa:real-stack-smoke:search:source-community:stale-link
+      task-id: task-39
+
+  search-result-community-data-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-result-community-data-failure-real-smoke-evidence
+      evidence-prefix: task-42-search-community-data-failure-real
+      run-script: qa:real-stack-smoke:search:result-community:data-failure
+      task-id: task-42
+
+  search-result-community-summary-facet-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-result-community-summary-facet-failure-real-smoke-evidence
+      evidence-prefix: task-44-search-community-summary-facet-failure-real
+      run-script: qa:real-stack-smoke:search:result-community:summary:facet-failure
+      task-id: task-44
+
+  search-source-detail-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-source-detail-failure-real-smoke-evidence
+      evidence-prefix: task-33-search-source-detail-failure-real
+      run-script: qa:real-stack-smoke:search:source-detail:failure
+      task-id: task-33
+
+  search-source-detail-missing-memory-id-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-source-detail-missing-memory-id-real-smoke-evidence
+      evidence-prefix: task-36-search-source-detail-missing-memory-id-real
+      run-script: qa:real-stack-smoke:search:source-detail:missing-memory-id
+      task-id: task-36
+
+  search-memory-detail-write-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-memory-detail-write-real-smoke-evidence
+      evidence-prefix: task-56-search-memory-detail-write-real
+      run-script: qa:real-stack-smoke:search:memory:detail:write-path
+      task-id: task-56
+
+  search-memory-detail-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-memory-detail-failure-real-smoke-evidence
+      evidence-prefix: task-57-search-memory-detail-failure-real
+      run-script: qa:real-stack-smoke:search:memory:detail:failure
+      task-id: task-57
+
+  search-source-community-summary-facet-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-source-community-summary-facet-failure-real-smoke-evidence
+      evidence-prefix: task-58-search-source-community-summary-facet-failure-real
+      run-script: qa:real-stack-smoke:search:source-community:summary:facet-failure
+      task-id: task-58
+
+  search-result-community-stale-link-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-result-community-stale-link-real-smoke-evidence
+      evidence-prefix: task-59-search-result-community-stale-link-real
+      run-script: qa:real-stack-smoke:search:result-community:stale-link
+      task-id: task-59
+
+  search-source-community-data-failure-real-smoke:
+    uses: ./.github/workflows/focused-real-smoke-reusable.yml
+    with:
+      artifact-name: search-source-community-data-failure-real-smoke-evidence
+      evidence-prefix: task-60-search-source-community-data-failure-real
+      run-script: qa:real-stack-smoke:search:source-community:data-failure
+      task-id: task-60
+  # END generated focused real smoke jobs

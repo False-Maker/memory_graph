@@ -1,0 +1,3 @@
+# Optional local embedding stack.
+# Install this file only when the runtime must support local sentence-transformers embeddings.
+sentence-transformers

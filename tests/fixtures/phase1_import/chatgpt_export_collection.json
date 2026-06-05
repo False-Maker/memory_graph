@@ -1,0 +1,44 @@
+{
+  "conversations": [
+    {
+      "id": "chatgpt-conv-collection-001",
+      "title": "ChatGPT Collection Variant",
+      "create_time": 1713343000,
+      "update_time": 1713343090,
+      "mapping": {
+        "node-a": {
+          "message": {
+            "role": "user",
+            "author": {
+              "role": "user"
+            },
+            "content": {
+              "parts": [
+                "Show the deployment checklist."
+              ]
+            },
+            "create_time": 1713343000,
+            "metadata": {}
+          }
+        },
+        "node-b": {
+          "message": {
+            "role": "assistant",
+            "author": {
+              "role": "assistant"
+            },
+            "content": {
+              "parts": [
+                "Build, health check, smoke test, and rollback validation."
+              ]
+            },
+            "create_time": 1713343090,
+            "metadata": {
+              "model_slug": "gpt-4.1"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

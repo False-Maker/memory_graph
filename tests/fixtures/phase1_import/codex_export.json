@@ -1,0 +1,26 @@
+{
+  "repo": "openai/codex-sample",
+  "version": "1.0",
+  "conversations": [
+    {
+      "id": "codex-turn-1",
+      "role": "user",
+      "content": "Inspect the importer.",
+      "language": "python",
+      "repo": "openai/codex-sample",
+      "file_path": "src/core/parsers/detector.py",
+      "line": 42,
+      "timestamp": "2026-04-17T11:00:00+00:00"
+    },
+    {
+      "id": "codex-turn-2",
+      "role": "assistant",
+      "content": "The importer falls back to the normalizer for unsupported exports.",
+      "language": "python",
+      "repo": "openai/codex-sample",
+      "file_path": "src/core/parsers/detector.py",
+      "line": 58,
+      "timestamp": "2026-04-17T11:00:45+00:00"
+    }
+  ]
+}

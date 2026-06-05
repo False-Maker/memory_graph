@@ -1,0 +1,18 @@
+[Unit]
+Description=Memory Graph Sidecar (NestJS health/readiness proxy)
+After=network.target
+
+[Service]
+Type=simple
+User=memorygraph
+Group=memorygraph
+WorkingDirectory=/srv/memory-graph
+EnvironmentFile=-/srv/memory-graph/.env.intranet
+ExecStartPre=/usr/bin/env npm --prefix /srv/memory-graph/frontend/api run build
+ExecStart=/usr/bin/bash -lc 'exec HOST=127.0.0.1 PORT=${SIDECAR_PORT:-3001} BACKEND_BASE_URL=http://127.0.0.1:${PY_API_PORT:-8000} npm --prefix frontend/api run start'
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

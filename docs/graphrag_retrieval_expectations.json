@@ -1,0 +1,28 @@
+{
+  "default": {
+    "min_recall_at_k": 0.9,
+    "max_empty_result_rate": 0.1,
+    "max_avg_latency_ms": 50,
+    "max_p95_latency_ms": 80
+  },
+  "strategies": {
+    "local": {
+      "min_recall_at_k": 0.9,
+      "max_empty_result_rate": 0.1,
+      "max_avg_latency_ms": 30,
+      "max_p95_latency_ms": 50
+    },
+    "global": {
+      "min_recall_at_k": 0.9,
+      "max_empty_result_rate": 0.1,
+      "max_avg_latency_ms": 50,
+      "max_p95_latency_ms": 80
+    },
+    "hybrid": {
+      "min_recall_at_k": 1.0,
+      "max_empty_result_rate": 0.0,
+      "max_avg_latency_ms": 50,
+      "max_p95_latency_ms": 80
+    }
+  }
+}

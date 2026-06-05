@@ -1,0 +1,40 @@
+{
+  "id": "chatgpt-conv-001",
+  "title": "ChatGPT Sample Export",
+  "create_time": 1713340800,
+  "update_time": 1713341100,
+  "mapping": {
+    "node-1": {
+      "message": {
+        "role": "user",
+        "author": {
+          "role": "user"
+        },
+        "content": {
+          "parts": [
+            "Outline the Memory Graph scope."
+          ]
+        },
+        "create_time": 1713340800,
+        "metadata": {}
+      }
+    },
+    "node-2": {
+      "message": {
+        "role": "assistant",
+        "author": {
+          "role": "assistant"
+        },
+        "content": {
+          "parts": [
+            "Memory Graph is a self-hosted GraphRAG memory system."
+          ]
+        },
+        "create_time": 1713340860,
+        "metadata": {
+          "model_slug": "gpt-4o-mini"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+{"role":"user","content":"Capture the current plan.","messageId":"msg-1","sessionId":"claude-code-session","timestamp":"2026-04-17T10:00:00+00:00"}
+{"role":"assistant","content":"The plan is to land sample-driven import coverage first.","messageId":"msg-2","parentId":"msg-1","sessionId":"claude-code-session","timestamp":"2026-04-17T10:00:20+00:00","model":"claude-3-7-sonnet-20250219"}

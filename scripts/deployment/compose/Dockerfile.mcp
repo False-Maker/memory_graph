@@ -1,0 +1,19 @@
+FROM python:3.13-slim-bookworm AS runner
+ARG INCLUDE_LOCAL_EMBEDDING=false
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash \
+    && rm -rf /var/lib/apt/lists/*
+COPY requirements-runtime.txt requirements-local-embedding.txt ./
+RUN pip install --no-cache-dir -r requirements-runtime.txt \
+    && if [ "${INCLUDE_LOCAL_EMBEDDING}" = "true" ]; then \
+        pip install --no-cache-dir -r requirements-local-embedding.txt; \
+    fi
+COPY src ./src
+COPY scripts ./scripts
+COPY config ./config
+RUN mkdir -p /app/data/faiss /app/data/dbms
+EXPOSE 8001
+CMD ["python3", "-m", "src.mcp", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8001", "--streamable-http-path", "/mcp"]

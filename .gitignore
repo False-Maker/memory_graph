@@ -1,0 +1,58 @@
+# System
+nul
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test
+.pytest_cache/
+.ruff_cache/
+
+# Logs
+*.log
+
+# Local environment and machine-specific config
+.env
+.env.*
+!.env.example
+!scripts/deployment/.env.intranet.example
+config/settings.yaml
+settings.json
+
+# Internal planning / evidence artifacts
+.sisyphus/
+docs/Eleanor*.md
+
+# Generated build artifacts
+assets/
+frontend/dist/
+frontend/test-results/
+
+# Local runtime/test scratch
+MagicMock/
+
+# Database data (large binary files)
+data/databases/
+data/transactions/
+data/faiss/
+data/server_id
+data/dbms/
+data/

@@ -1,0 +1,117 @@
+.directory-import-result {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.01);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.directory-import-result__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.directory-import-result__header h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.directory-import-result__badge {
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.directory-import-result__badge--ok {
+  border-color: rgba(34, 211, 238, 0.5);
+  color: var(--color-accent);
+  background: rgba(34, 211, 238, 0.12);
+}
+
+.directory-import-result__badge--warn {
+  border-color: rgba(251, 191, 36, 0.5);
+  color: #f5d48a;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.directory-import-result__badge--muted {
+  color: var(--text-secondary);
+}
+
+.directory-import-result__message {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.directory-import-result__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 8px;
+}
+
+.directory-import-result__metric {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.01);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.directory-import-result__metric span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.directory-import-result__metric strong {
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.directory-import-result__failures {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.01);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.directory-import-result__failures h4 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.directory-import-result__failures ul {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.directory-import-result__failure-path {
+  color: var(--text-primary);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.directory-import-result__failure-meta {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.directory-import-result__empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}

@@ -1,0 +1,165 @@
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-sidebar: #0d0d12;
+  --bg-sidebar-hover: #141419;
+  --bg-card: #16161e;
+  --color-primary: #8b5cf6;
+  --color-accent: #22d3ee;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --border-color: #27272a;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --dashboard-stat-entities-gradient: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  --dashboard-stat-relationships-gradient: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
+  --dashboard-stat-memories-gradient: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  --dashboard-stat-communities-gradient: linear-gradient(135deg, #10b981 0%, #22d3ee 100%);
+  --dashboard-error-bg: rgba(127, 29, 29, 0.25);
+  --dashboard-error-border: rgba(248, 113, 113, 0.4);
+  --dashboard-error-text: #fecaca;
+  --graph-node-entity: #6366f1;
+  --graph-node-community: #8b5cf6;
+  --graph-node-default: #64748b;
+  --graph-node-stroke: #ffffff;
+  --graph-node-selected-stroke: #22d3ee;
+  --graph-link-color: #cbd5e1;
+  --graph-label-color: #475569;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(34, 211, 238, 0.08), transparent),
+    var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-group-title {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nav-group-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  transition: all 180ms ease;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-sidebar-hover);
+}
+
+.nav-link.active {
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.35);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(34, 211, 238, 0.1));
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+}
+
+.page {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.page h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.page p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  max-width: 420px;
+  background: #201f2c;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  color: #fecaca;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+}

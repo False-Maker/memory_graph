@@ -1,0 +1,20 @@
+{
+  "id": "claude-chat-variant-001",
+  "name": "Claude Chat Variant",
+  "chat_before": "2026-04-17T12:00:00+00:00",
+  "chat_after": "2026-04-17T12:01:00+00:00",
+  "model": "claude-3-7-sonnet-20250219",
+  "chat": [
+    {
+      "sender": "human",
+      "text": "List the release blockers.",
+      "timestamp": "2026-04-17T12:00:00+00:00"
+    },
+    {
+      "sender": "assistant",
+      "text": "Config drift and missing smoke evidence.",
+      "timestamp": "2026-04-17T12:01:00+00:00",
+      "reasoning": "Both affect release confidence."
+    }
+  ]
+}

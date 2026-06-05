@@ -1,0 +1,24 @@
+{
+  "default": {
+    "min_recall_at_k": 0.6,
+    "max_empty_result_rate": 0.3
+  },
+  "strategies": {
+    "local": {
+      "min_recall_at_k": 0.6,
+      "max_avg_latency_ms": 60,
+      "max_p95_latency_ms": 100
+    },
+    "global": {
+      "min_recall_at_k": 0.6,
+      "max_avg_latency_ms": 60,
+      "max_p95_latency_ms": 100
+    },
+    "hybrid": {
+      "min_recall_at_k": 0.9,
+      "max_empty_result_rate": 0.2,
+      "max_avg_latency_ms": 60,
+      "max_p95_latency_ms": 100
+    }
+  }
+}

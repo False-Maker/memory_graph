@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "query": "Why did we choose Python for ETL?",
+      "expected_memory_ids": ["mem_py_decision"]
+    },
+    {
+      "query": "How do we rollback after a failed deploy?",
+      "expected_memory_ids": ["mem_rollback_runbook"]
+    },
+    {
+      "query": "How does hybrid GraphRAG retrieval work?",
+      "expected_memory_ids": ["mem_hybrid_notes"]
+    }
+  ]
+}

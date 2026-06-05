@@ -1,0 +1,32 @@
+{
+  "slackExportVersion": "2026.04",
+  "messages": [
+    {
+      "type": "message",
+      "ts": "1713342000.000000",
+      "text": "Deploy checklist is ready.",
+      "blocks": [
+        {
+          "type": "rich_text"
+        }
+      ],
+      "user_profile": {
+        "real_name": "Alice Example"
+      },
+      "channel": "ops"
+    },
+    {
+      "type": "message",
+      "ts": "1713342060.000000",
+      "text": "Run health and smoke before rollout.",
+      "blocks": [
+        {
+          "type": "rich_text"
+        }
+      ],
+      "username": "ReleaseBot",
+      "bot_id": "B123",
+      "channel": "ops"
+    }
+  ]
+}

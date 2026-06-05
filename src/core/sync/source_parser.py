@@ -1,0 +1,631 @@
+"""Markdown scanning and local file mutation for external source workspaces."""
+
+from __future__ import annotations
+
+import hashlib
+import os
+import re
+from datetime import datetime, timezone
+from glob import glob
+from pathlib import Path
+from typing import Dict, List, Optional
+
+from src.core.sync.source_models import SyncSourceConfig, SyncSourceRecord, WorkspaceSnapshot
+
+
+HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.+?)\s*$", re.MULTILINE)
+MARKER_RE = re.compile(r"<!--\s*mg:id=([^\s>]+)\s*-->")
+TAG_RE = re.compile(r"(?<!\w)#([a-zA-Z0-9_/-]+)")
+BULLET_RE = re.compile(r"^([ \t]*)([-*+])[ \t]+(.*)$")
+
+CONTAINER_TITLES = {
+    "decisions",
+    "decision",
+    "preferences",
+    "preference",
+    "important events",
+    "important event",
+    "events",
+    "daily notes",
+    "notes",
+    "weekly summaries",
+    "monthly summaries",
+    "memory",
+    "memories",
+    "inbox",
+}
+
+ITEM_SECTION_RECORD_TYPES = {
+    "decisions": "decision",
+    "decision": "decision",
+    "preferences": "preference",
+    "preference": "preference",
+    "important events": "important_event",
+    "important event": "important_event",
+}
+
+
+class WorkspaceSourceParser:
+    """Parse markdown-backed workspaces into sync records."""
+
+    def __init__(self, config: SyncSourceConfig):
+        self.config = config
+
+    def _normalize(self, value: str) -> str:
+        return " ".join(value.strip().lower().split())
+
+    def _slug(self, value: str) -> str:
+        normalized = re.sub(r"[^a-z0-9]+", "_", self._normalize(value))
+        return normalized.strip("_") or "record"
+
+    def _content_checksum(self, content: str) -> str:
+        return f"sha256:{hashlib.sha256(content.encode('utf-8')).hexdigest()}"
+
+    def _file_revision(self, path: Path) -> str:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+        return f"file:{digest}"
+
+    def _detect_record_type(
+        self,
+        relative_path: str,
+        title: str,
+        parent_titles: List[str],
+    ) -> str:
+        normalized_parents = [self._normalize(item) for item in parent_titles]
+        if "decisions" in normalized_parents or "decision" in normalized_parents:
+            return "decision"
+        if "preferences" in normalized_parents or "preference" in normalized_parents:
+            return "preference"
+        if "important events" in normalized_parents or "important event" in normalized_parents:
+            return "important_event"
+
+        filename = Path(relative_path).name.lower()
+        if filename.startswith("weekly-"):
+            return "weekly_summary"
+        if filename.startswith("monthly-"):
+            return "monthly_summary"
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.md", filename):
+            return "daily_note"
+        if relative_path == "MEMORY.md":
+            return "master_memory_entry"
+
+        normalized_title = self._normalize(title)
+        if "decision" in normalized_title:
+            return "decision"
+        if "preference" in normalized_title:
+            return "preference"
+        if "event" in normalized_title:
+            return "important_event"
+        return "master_memory_entry"
+
+    def _temporary_external_id(
+        self,
+        record_type: str,
+        relative_path: str,
+        heading_path: List[str],
+        title: str,
+        occurrence: int = 1,
+    ) -> str:
+        stable_key = "|".join([relative_path, *heading_path, title, str(occurrence)]).encode("utf-8")
+        digest = hashlib.sha256(stable_key).hexdigest()[:12]
+        return f"{self.config.source_system}:{self.config.workspace_id}:{record_type}_{digest}"
+
+    def _heading_line_end(self, text: str, start: int) -> int:
+        newline_index = text.find("\n", start)
+        return len(text) if newline_index == -1 else newline_index + 1
+
+    def _extract_marker(self, text: str, heading_end: int, section_end: int) -> Optional[str]:
+        header_slice = text[heading_end:min(section_end, heading_end + 240)]
+        inspected_lines = 0
+        for line in header_slice.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                break
+            if not stripped:
+                inspected_lines += 1
+                if inspected_lines >= 3:
+                    break
+                continue
+            match = MARKER_RE.fullmatch(stripped)
+            if match:
+                return match.group(1)
+            inspected_lines += 1
+            if inspected_lines >= 3:
+                break
+        return None
+
+    def _extract_body(self, section_text: str) -> str:
+        first_newline = section_text.find("\n")
+        if first_newline == -1:
+            return ""
+        body = section_text[first_newline + 1 :]
+        body = MARKER_RE.sub("", body, count=1)
+        return body.strip()
+
+    def _extract_tags(self, content: str) -> List[str]:
+        tags = []
+        for match in TAG_RE.findall(content):
+            if match not in tags:
+                tags.append(match)
+        return tags
+
+    def _supports_itemized_section(self, relative_path: str, title: str) -> bool:
+        """Whether a heading should be parsed as list-item records."""
+        normalized_title = self._normalize(title)
+        if normalized_title not in ITEM_SECTION_RECORD_TYPES:
+            return False
+
+        filename = Path(relative_path).name.lower()
+        return (
+            relative_path == "MEMORY.md"
+            or filename.startswith("weekly-")
+            or filename.startswith("monthly-")
+        )
+
+    def _should_write_marker(self, source_path: str) -> bool:
+        """Skip marker writeback for generated summary artifacts."""
+        filename = Path(source_path).name.lower()
+        return not (
+            source_path == "MEMORY.md"
+            or filename.startswith("weekly-")
+            or filename.startswith("monthly-")
+        )
+
+    def _derive_item_title(self, content: str) -> str:
+        """Build a concise title for a list-item record."""
+        title = re.sub(r"^\[\d{4}-\d{2}-\d{2}\]\s*", "", content).strip()
+        title = re.sub(r"\(source:\s*.*?\)\s*$", "", title).strip()
+        title = re.sub(r"\s+", " ", title)
+        return title[:120] or "record"
+
+    def _render_list_item_content(
+        self,
+        content: str,
+        indent: str = "",
+        bullet: str = "-",
+    ) -> str:
+        """Render content into one markdown list item block."""
+        lines = [line.rstrip() for line in content.strip().splitlines() if line.strip()]
+        if not lines:
+            return f"{indent}{bullet} \n"
+
+        rendered = [f"{indent}{bullet} {lines[0].lstrip('-').strip()}"]
+        rendered.extend(f"{indent}  {line}" for line in lines[1:])
+        return "\n".join(rendered) + "\n"
+
+    def _parse_list_item_records(
+        self,
+        text: str,
+        relative_path: str,
+        path: Path,
+        section_title: str,
+        parent_titles: List[str],
+        heading_level: int,
+        heading_end: int,
+        section_end: int,
+        modified_at: datetime,
+        revision: str,
+        occurrence_map: Dict[tuple[str, ...], int],
+    ) -> List[SyncSourceRecord]:
+        """Parse a Decisions/Preferences/Important Events section into item-level records."""
+        body_text = text[heading_end:section_end]
+        if not re.search(r"(?m)^[ \t]*[-*+] ", body_text):
+            return []
+
+        records: List[SyncSourceRecord] = []
+        lines = body_text.splitlines(keepends=True)
+        pending_marker: Optional[str] = None
+        pending_marker_start: Optional[int] = None
+        offset = heading_end
+        index = 0
+        normalized_title = self._normalize(section_title)
+        record_type = ITEM_SECTION_RECORD_TYPES[normalized_title]
+
+        while index < len(lines):
+            line = lines[index]
+            stripped = line.strip()
+            line_start = offset
+            offset += len(line)
+
+            marker_match = MARKER_RE.fullmatch(stripped)
+            if marker_match:
+                pending_marker = marker_match.group(1)
+                pending_marker_start = line_start
+                index += 1
+                continue
+
+            bullet_match = BULLET_RE.match(line.rstrip("\n"))
+            if bullet_match is None:
+                pending_marker = None
+                pending_marker_start = None
+                index += 1
+                continue
+
+            block_start = pending_marker_start if pending_marker_start is not None else line_start
+            block_lines = [line]
+            block_end = offset
+            index += 1
+
+            while index < len(lines):
+                candidate = lines[index]
+                candidate_stripped = candidate.strip()
+                if MARKER_RE.fullmatch(candidate_stripped) or BULLET_RE.match(candidate.rstrip("\n")):
+                    break
+                if candidate_stripped.startswith("#"):
+                    break
+                block_lines.append(candidate)
+                block_end += len(candidate)
+                index += 1
+
+            bullet_lines = [item for item in block_lines if not MARKER_RE.fullmatch(item.strip())]
+            content_lines = []
+            item_indent = bullet_match.group(1)
+            item_bullet = bullet_match.group(2)
+            for line_index, bullet_line in enumerate(bullet_lines):
+                raw = bullet_line.rstrip("\n")
+                if line_index == 0:
+                    current_match = BULLET_RE.match(raw)
+                    content_lines.append(current_match.group(3).strip() if current_match else raw.strip())
+                else:
+                    content_lines.append(raw.strip())
+            content = "\n".join(item for item in content_lines if item).strip()
+            title = self._derive_item_title(content)
+            item_key = tuple([relative_path, *parent_titles, section_title, content])
+            occurrence = occurrence_map.get(item_key, 0) + 1
+            occurrence_map[item_key] = occurrence
+            external_id = pending_marker or self._temporary_external_id(
+                record_type=record_type,
+                relative_path=relative_path,
+                heading_path=parent_titles + [section_title],
+                title=content,
+                occurrence=occurrence,
+            )
+
+            records.append(
+                SyncSourceRecord(
+                    workspace_id=self.config.workspace_id,
+                    external_id=external_id,
+                    source_path=relative_path,
+                    file_path=path,
+                    record_type=record_type,
+                    title=title,
+                    content=content,
+                    tags=self._extract_tags(content),
+                    content_checksum=self._content_checksum(content),
+                    external_updated_at=modified_at,
+                    external_revision=revision,
+                    marker_present=pending_marker is not None,
+                    span_start=block_start,
+                    span_end=block_end,
+                    record_kind="list_item",
+                    heading_level=heading_level,
+                    heading_end=heading_end,
+                    item_indent=item_indent,
+                    item_bullet=item_bullet,
+                    heading_path=parent_titles + [section_title],
+                )
+            )
+
+            pending_marker = None
+            pending_marker_start = None
+
+        return records
+
+    def _resolve_source_candidate(self, raw_path: str) -> Path:
+        """Resolve one configured source path against the workspace root when needed."""
+        candidate = Path(raw_path).expanduser()
+        if candidate.is_absolute():
+            return candidate
+        return (self.config.workspace_root / candidate).resolve()
+
+    def _expand_source_path(self, raw_path: str) -> List[Path]:
+        """Expand one configured file/dir/glob path into concrete markdown files."""
+        normalized = raw_path.strip()
+        if not normalized:
+            return []
+
+        candidate = self._resolve_source_candidate(normalized)
+        if candidate.is_file():
+            return [candidate.resolve()] if candidate.suffix.lower() == ".md" else []
+
+        if candidate.is_dir():
+            return sorted(path.resolve() for path in candidate.rglob("*.md") if path.is_file())
+
+        if Path(normalized).is_absolute():
+            matches = glob(os.path.expanduser(normalized), recursive=True)
+        else:
+            matches = glob(str((self.config.workspace_root / normalized).resolve()), recursive=True)
+
+        return sorted(
+            Path(match).resolve()
+            for match in matches
+            if Path(match).is_file() and Path(match).suffix.lower() == ".md"
+        )
+
+    def list_source_files(self) -> List[Path]:
+        """List configured markdown source files."""
+        files: Dict[Path, None] = {}
+        for source_path in self.config.source_paths:
+            for path in self._expand_source_path(source_path):
+                files[path.resolve()] = None
+        return sorted(files.keys())
+
+    def scan_workspace(self) -> WorkspaceSnapshot:
+        """Scan the configured workspace and return parsed records."""
+        records: List[SyncSourceRecord] = []
+        for path in self.list_source_files():
+            records.extend(self.parse_file(path))
+        return WorkspaceSnapshot(
+            workspace_root=self.config.workspace_root,
+            records=records,
+        )
+
+    def parse_file(self, path: Path) -> List[SyncSourceRecord]:
+        """Parse one markdown file into logical sync records."""
+        text = path.read_text(encoding="utf-8")
+        try:
+            relative_path = str(path.resolve().relative_to(self.config.workspace_root.resolve()))
+        except ValueError:
+            relative_path = str(path.resolve())
+        modified_at = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+        revision = self._file_revision(path)
+
+        headings = list(HEADING_RE.finditer(text))
+        records: List[SyncSourceRecord] = []
+        occurrence_map: Dict[tuple[str, ...], int] = {}
+
+        if not headings:
+            marker_match = MARKER_RE.search(text[:300])
+            external_id = marker_match.group(1) if marker_match else self._temporary_external_id(
+                record_type=self._detect_record_type(relative_path, path.stem, []),
+                relative_path=relative_path,
+                heading_path=[],
+                title=path.stem,
+            )
+            body = MARKER_RE.sub("", text, count=1).strip()
+            records.append(
+                SyncSourceRecord(
+                    workspace_id=self.config.workspace_id,
+                    external_id=external_id,
+                    source_path=relative_path,
+                    file_path=path,
+                    record_type=self._detect_record_type(relative_path, path.stem, []),
+                    title=path.stem,
+                    content=body,
+                    tags=self._extract_tags(body),
+                    content_checksum=self._content_checksum(body),
+                    external_updated_at=modified_at,
+                    external_revision=revision,
+                    marker_present=marker_match is not None,
+                    span_start=0,
+                    span_end=len(text),
+                    record_kind="heading",
+                    heading_level=0,
+                    heading_end=0,
+                    heading_path=[],
+                )
+            )
+            return records
+
+        stack: List[tuple[int, str]] = []
+        for index, heading in enumerate(headings):
+            level = len(heading.group(1))
+            title = heading.group(2).strip()
+            while stack and stack[-1][0] >= level:
+                stack.pop()
+            parent_titles = [item[1] for item in stack]
+            stack.append((level, title))
+
+            section_end = len(text)
+            has_children = False
+            next_index = index + 1
+            while next_index < len(headings):
+                candidate = headings[next_index]
+                candidate_level = len(candidate.group(1))
+                if candidate_level <= level:
+                    section_end = candidate.start()
+                    break
+                has_children = True
+                next_index += 1
+
+            marker = self._extract_marker(
+                text,
+                self._heading_line_end(text, heading.start()),
+                section_end,
+            )
+            if self._supports_itemized_section(relative_path, title):
+                item_records = self._parse_list_item_records(
+                    text=text,
+                    relative_path=relative_path,
+                    path=path,
+                    section_title=title,
+                    parent_titles=parent_titles,
+                    heading_level=level,
+                    heading_end=self._heading_line_end(text, heading.start()),
+                    section_end=section_end,
+                    modified_at=modified_at,
+                    revision=revision,
+                    occurrence_map=occurrence_map,
+                )
+                if item_records:
+                    records.extend(item_records)
+                    continue
+            if marker is None and has_children and self._normalize(title) in CONTAINER_TITLES:
+                continue
+            if marker is None and has_children:
+                continue
+
+            section_text = text[heading.start() : section_end]
+            body = self._extract_body(section_text)
+            record_type = self._detect_record_type(relative_path, title, parent_titles)
+            heading_key = tuple([relative_path, *parent_titles, title])
+            occurrence = occurrence_map.get(heading_key, 0) + 1
+            occurrence_map[heading_key] = occurrence
+            external_id = marker or self._temporary_external_id(
+                record_type=record_type,
+                relative_path=relative_path,
+                heading_path=parent_titles + [title],
+                title=title,
+                occurrence=occurrence,
+            )
+
+            records.append(
+                SyncSourceRecord(
+                    workspace_id=self.config.workspace_id,
+                    external_id=external_id,
+                    source_path=relative_path,
+                    file_path=path,
+                    record_type=record_type,
+                    title=title,
+                    content=body,
+                    tags=self._extract_tags(body),
+                    content_checksum=self._content_checksum(body),
+                    external_updated_at=modified_at,
+                    external_revision=revision,
+                    marker_present=marker is not None,
+                    span_start=heading.start(),
+                    span_end=section_end,
+                    record_kind="heading",
+                    heading_level=level,
+                    heading_end=self._heading_line_end(text, heading.start()),
+                    heading_path=parent_titles,
+                )
+            )
+
+        if not records:
+            return self.parse_file_as_single_record(path)
+
+        return records
+
+    def parse_file_as_single_record(self, path: Path) -> List[SyncSourceRecord]:
+        """Fallback parse when all headings look structural."""
+        text = path.read_text(encoding="utf-8")
+        relative_path = str(path.resolve().relative_to(self.config.workspace_root.resolve()))
+        modified_at = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+        revision = self._file_revision(path)
+        marker_match = MARKER_RE.search(text[:300])
+        title = path.stem
+        external_id = marker_match.group(1) if marker_match else self._temporary_external_id(
+            record_type=self._detect_record_type(relative_path, title, []),
+            relative_path=relative_path,
+            heading_path=[],
+            title=title,
+        )
+        body = MARKER_RE.sub("", text, count=1).strip()
+        return [
+            SyncSourceRecord(
+                workspace_id=self.config.workspace_id,
+                external_id=external_id,
+                source_path=relative_path,
+                file_path=path,
+                record_type=self._detect_record_type(relative_path, title, []),
+                title=title,
+                content=body,
+                tags=self._extract_tags(body),
+                content_checksum=self._content_checksum(body),
+                external_updated_at=modified_at,
+                external_revision=revision,
+                marker_present=marker_match is not None,
+                span_start=0,
+                span_end=len(text),
+                record_kind="heading",
+                heading_level=0,
+                heading_end=0,
+                heading_path=[],
+            )
+        ]
+
+    def write_markers(self, records: List[SyncSourceRecord]) -> int:
+        """Write missing markers back into local files."""
+        grouped: Dict[Path, List[SyncSourceRecord]] = {}
+        for record in records:
+            if record.marker_present or not self._should_write_marker(record.source_path):
+                continue
+            grouped.setdefault(record.file_path, []).append(record)
+
+        written = 0
+        for path, file_records in grouped.items():
+            text = path.read_text(encoding="utf-8")
+            for record in sorted(file_records, key=lambda item: item.span_start, reverse=True):
+                marker_line = f"{record.item_indent}<!-- mg:id={record.external_id} -->\n"
+                if record.is_file_level:
+                    if MARKER_RE.search(text[:300]):
+                        continue
+                    prefix = f"<!-- mg:id={record.external_id} -->\n" + ("\n" if text and not text.startswith("\n") else "")
+                    text = prefix + text
+                    written += 1
+                    continue
+                if record.is_list_item:
+                    insert_at = record.span_start
+                else:
+                    insert_at = record.heading_end
+                text = text[:insert_at] + marker_line + text[insert_at:]
+                written += 1
+            path.write_text(text, encoding="utf-8")
+        return written
+
+    def _render_record_block(
+        self,
+        record: SyncSourceRecord,
+        title: str,
+        content: str,
+        external_id: str,
+    ) -> str:
+        marker_line = f"<!-- mg:id={external_id} -->"
+        cleaned_content = content.strip()
+        if record.is_file_level:
+            if cleaned_content:
+                return f"{marker_line}\n\n{cleaned_content}\n"
+            return f"{marker_line}\n"
+
+        if record.is_list_item:
+            return (
+                f"{record.item_indent}{marker_line}\n"
+                f"{self._render_list_item_content(cleaned_content, record.item_indent, record.item_bullet)}"
+            )
+
+        heading = f"{'#' * record.heading_level} {title.strip() or record.title}"
+        if cleaned_content:
+            return f"{heading}\n{marker_line}\n\n{cleaned_content}\n"
+        return f"{heading}\n{marker_line}\n"
+
+    def replace_record(
+        self,
+        record: SyncSourceRecord,
+        title: str,
+        content: str,
+        external_id: str,
+    ):
+        """Replace one local record block."""
+        text = record.file_path.read_text(encoding="utf-8")
+        replacement = self._render_record_block(record, title, content, external_id)
+        new_text = text[: record.span_start] + replacement + text[record.span_end :]
+        record.file_path.write_text(new_text, encoding="utf-8")
+
+    def delete_record(self, record: SyncSourceRecord):
+        """Delete one local record block."""
+        text = record.file_path.read_text(encoding="utf-8")
+        if record.is_file_level:
+            record.file_path.write_text("", encoding="utf-8")
+            return
+
+        new_text = text[: record.span_start] + text[record.span_end :]
+        new_text = re.sub(r"\n{3,}", "\n\n", new_text).strip()
+        if new_text:
+            record.file_path.write_text(new_text + "\n", encoding="utf-8")
+        else:
+            record.file_path.write_text("", encoding="utf-8")
+
+    def append_inbox_record(self, payload: Dict[str, object]):
+        """Append a remote-only record into the local inbox."""
+        inbox_dir = self.config.resolved_inbox_dir()
+        inbox_dir.mkdir(parents=True, exist_ok=True)
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        path = inbox_dir / f"{date_str}.md"
+        title = str(payload.get("title") or payload.get("external_id") or "Imported Record")
+        external_id = str(payload["external_id"])
+        content = str(payload.get("content") or "").strip()
+        block = f"## {title}\n<!-- mg:id={external_id} -->\n\n{content}\n"
+        existing = path.read_text(encoding="utf-8") if path.exists() else ""
+        prefix = "" if not existing.strip() else "\n"
+        path.write_text(existing + prefix + block, encoding="utf-8")

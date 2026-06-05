@@ -1,0 +1,92 @@
+services:
+  memory-graph-sidecar:
+    build:
+      context: ../../..
+      dockerfile: scripts/deployment/compose/Dockerfile.sidecar
+    container_name: memory-graph-sidecar
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3001
+      BACKEND_BASE_URL: http://memory-graph-api:8000
+    expose:
+      - "3001"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then((response)=>{if(!response.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  memory-graph-api:
+    build:
+      context: ../../..
+      dockerfile: scripts/deployment/compose/Dockerfile.api
+      args:
+        INCLUDE_LOCAL_EMBEDDING: ${COMPOSE_INCLUDE_LOCAL_EMBEDDING:-false}
+    container_name: memory-graph-api
+    depends_on:
+      memory-graph-sidecar:
+        condition: service_started
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SIDECAR_BASE_URL: http://memory-graph-sidecar:3001
+      MEMORY_GRAPH_SETTINGS_PATH: /app/config/settings.yaml
+    ports:
+      - "${COMPOSE_API_PUBLISHED_PORT:-8000}:8000"
+    volumes:
+      - ../../../config:/app/config
+      - memory-graph-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/').read(); urllib.request.urlopen('http://127.0.0.1:8000/health').read(); urllib.request.urlopen('http://127.0.0.1:8000/api/v1/diagnostics/runtime').read()"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  memory-graph-mcp:
+    build:
+      context: ../../..
+      dockerfile: scripts/deployment/compose/Dockerfile.mcp
+      args:
+        INCLUDE_LOCAL_EMBEDDING: ${COMPOSE_INCLUDE_LOCAL_EMBEDDING:-false}
+    container_name: memory-graph-mcp
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MEMORY_GRAPH_SETTINGS_PATH: /app/config/settings.yaml
+      MEMORY_GRAPH_MCP_TRANSPORT: streamable-http
+      MEMORY_GRAPH_MCP_HOST: 0.0.0.0
+      MEMORY_GRAPH_MCP_PORT: 8001
+      MEMORY_GRAPH_MCP_MOUNT_PATH: ${MEMORY_GRAPH_MCP_MOUNT_PATH:-/}
+      MEMORY_GRAPH_MCP_STREAMABLE_HTTP_PATH: ${MEMORY_GRAPH_MCP_STREAMABLE_HTTP_PATH:-/mcp}
+      MEMORY_GRAPH_MCP_STATELESS_HTTP: ${MEMORY_GRAPH_MCP_STATELESS_HTTP:-true}
+      MEMORY_GRAPH_MCP_BEARER_TOKEN: ${MEMORY_GRAPH_MCP_BEARER_TOKEN:-}
+    ports:
+      - "${COMPOSE_MCP_PUBLISHED_PORT:-8001}:8001"
+    volumes:
+      - ../../../config:/app/config
+      - memory-graph-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - /app/scripts/deployment/mcp-health-check.sh
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  memory-graph-data:

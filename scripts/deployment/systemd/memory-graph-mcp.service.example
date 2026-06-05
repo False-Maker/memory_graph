@@ -1,0 +1,20 @@
+[Unit]
+Description=Memory Graph MCP (streamable-http)
+After=network.target
+
+[Service]
+Type=simple
+User=memorygraph
+Group=memorygraph
+WorkingDirectory=/srv/memory-graph
+EnvironmentFile=-/srv/memory-graph/.env.intranet
+EnvironmentFile=-/srv/memory-graph/.env.mcp
+Environment=PYTHONPATH=/srv/memory-graph
+Environment=MEMORY_GRAPH_SETTINGS_PATH=/srv/memory-graph/config/settings.yaml
+ExecStart=/usr/bin/bash -lc 'exec ${PYTHON_BIN:-python3} -m src.mcp --transport streamable-http --host ${MEMORY_GRAPH_MCP_HOST:-127.0.0.1} --port ${MEMORY_GRAPH_MCP_PORT:-8001} --mount-path ${MEMORY_GRAPH_MCP_MOUNT_PATH:-/} --streamable-http-path ${MEMORY_GRAPH_MCP_STREAMABLE_HTTP_PATH:-/mcp} --stateless-http ${MEMORY_GRAPH_MCP_STATELESS_HTTP:-true}'
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

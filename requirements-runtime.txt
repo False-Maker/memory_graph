@@ -1,0 +1,23 @@
+fastapi
+uvicorn[standard]
+pydantic>=2.10
+pydantic-settings
+pyyaml
+python-multipart
+mcp>=1.27,<2
+
+# LLM
+openai
+anthropic
+httpx
+keyring
+
+# Database / graph / vector runtime
+networkx
+python-igraph>=0.11.0
+faiss-cpu
+numpy
+leidenalg>=0.10.0
+
+# File monitoring
+watchdog

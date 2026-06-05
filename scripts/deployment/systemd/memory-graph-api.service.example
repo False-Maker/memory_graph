@@ -1,0 +1,21 @@
+[Unit]
+Description=Memory Graph API (FastAPI + React Web shell)
+After=network.target memory-graph-sidecar.service
+Wants=memory-graph-sidecar.service
+
+[Service]
+Type=simple
+User=memorygraph
+Group=memorygraph
+WorkingDirectory=/srv/memory-graph
+EnvironmentFile=-/srv/memory-graph/.env.intranet
+Environment=PYTHONPATH=/srv/memory-graph
+Environment=MEMORY_GRAPH_SETTINGS_PATH=/srv/memory-graph/config/settings.yaml
+ExecStartPre=/usr/bin/env npm --prefix /srv/memory-graph/frontend run build
+ExecStart=/usr/bin/bash -lc 'exec SIDECAR_BASE_URL=http://127.0.0.1:${SIDECAR_PORT:-3001} ${PYTHON_BIN:-python3} -m uvicorn src.api.main:app --host 127.0.0.1 --port ${PY_API_PORT:-8000}'
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

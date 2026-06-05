@@ -1,0 +1,198 @@
+{
+  "generated_at": "2026-04-02T13:36:24.514165+00:00",
+  "top_k": 5,
+  "strategies": {
+    "local": {
+      "strategy": "local",
+      "query_count": 3,
+      "recall_at_k": 1.0,
+      "empty_result_rate": 0.0,
+      "avg_latency_ms": 10.0,
+      "p95_latency_ms": 20,
+      "evidences": [
+        {
+          "query": "Why did we choose Python for ETL?",
+          "expected_memory_ids": [
+            "mem_py_decision"
+          ],
+          "returned_memory_ids": [
+            "mem_py_decision",
+            "mem_fastapi_stack"
+          ],
+          "hit_memory_ids": [
+            "mem_py_decision"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        },
+        {
+          "query": "How do we rollback after a failed deploy?",
+          "expected_memory_ids": [
+            "mem_rollback_runbook"
+          ],
+          "returned_memory_ids": [
+            "mem_rollback_runbook",
+            "mem_backup_manifest"
+          ],
+          "hit_memory_ids": [
+            "mem_rollback_runbook"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        },
+        {
+          "query": "How does hybrid GraphRAG retrieval work?",
+          "expected_memory_ids": [
+            "mem_hybrid_notes"
+          ],
+          "returned_memory_ids": [
+            "mem_hybrid_notes",
+            "mem_local_global_modes"
+          ],
+          "hit_memory_ids": [
+            "mem_hybrid_notes"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        }
+      ]
+    },
+    "global": {
+      "strategy": "global",
+      "query_count": 3,
+      "recall_at_k": 1.0,
+      "empty_result_rate": 0.0,
+      "avg_latency_ms": 10.0,
+      "p95_latency_ms": 20,
+      "evidences": [
+        {
+          "query": "Why did we choose Python for ETL?",
+          "expected_memory_ids": [
+            "mem_py_decision"
+          ],
+          "returned_memory_ids": [
+            "mem_py_decision",
+            "mem_fastapi_stack",
+            "mem_rollback_runbook",
+            "mem_backup_manifest",
+            "mem_hybrid_notes"
+          ],
+          "hit_memory_ids": [
+            "mem_py_decision"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        },
+        {
+          "query": "How do we rollback after a failed deploy?",
+          "expected_memory_ids": [
+            "mem_rollback_runbook"
+          ],
+          "returned_memory_ids": [
+            "mem_rollback_runbook",
+            "mem_backup_manifest",
+            "mem_py_decision",
+            "mem_fastapi_stack",
+            "mem_hybrid_notes"
+          ],
+          "hit_memory_ids": [
+            "mem_rollback_runbook"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        },
+        {
+          "query": "How does hybrid GraphRAG retrieval work?",
+          "expected_memory_ids": [
+            "mem_hybrid_notes"
+          ],
+          "returned_memory_ids": [
+            "mem_hybrid_notes",
+            "mem_local_global_modes",
+            "mem_py_decision",
+            "mem_fastapi_stack",
+            "mem_rollback_runbook"
+          ],
+          "hit_memory_ids": [
+            "mem_hybrid_notes"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        }
+      ]
+    },
+    "hybrid": {
+      "strategy": "hybrid",
+      "query_count": 3,
+      "recall_at_k": 1.0,
+      "empty_result_rate": 0.0,
+      "avg_latency_ms": 10.0,
+      "p95_latency_ms": 20,
+      "evidences": [
+        {
+          "query": "Why did we choose Python for ETL?",
+          "expected_memory_ids": [
+            "mem_py_decision"
+          ],
+          "returned_memory_ids": [
+            "mem_py_decision",
+            "mem_fastapi_stack",
+            "mem_rollback_runbook",
+            "mem_backup_manifest",
+            "mem_hybrid_notes"
+          ],
+          "hit_memory_ids": [
+            "mem_py_decision"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        },
+        {
+          "query": "How do we rollback after a failed deploy?",
+          "expected_memory_ids": [
+            "mem_rollback_runbook"
+          ],
+          "returned_memory_ids": [
+            "mem_rollback_runbook",
+            "mem_backup_manifest",
+            "mem_py_decision",
+            "mem_fastapi_stack",
+            "mem_hybrid_notes"
+          ],
+          "hit_memory_ids": [
+            "mem_rollback_runbook"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        },
+        {
+          "query": "How does hybrid GraphRAG retrieval work?",
+          "expected_memory_ids": [
+            "mem_hybrid_notes"
+          ],
+          "returned_memory_ids": [
+            "mem_hybrid_notes",
+            "mem_local_global_modes",
+            "mem_py_decision",
+            "mem_fastapi_stack",
+            "mem_rollback_runbook"
+          ],
+          "hit_memory_ids": [
+            "mem_hybrid_notes"
+          ],
+          "recall": 1.0,
+          "is_empty": false,
+          "latency_ms": 1
+        }
+      ]
+    }
+  }
+}

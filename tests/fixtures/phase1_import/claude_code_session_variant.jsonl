@@ -1,0 +1,4 @@
+
+{"role":"user","content":"Preserve the existing API contract.","messageId":"variant-1","sessionId":"claude-code-variant","timestamp":"2026-04-17T13:00:00+00:00","workspace":"Memory_graph"}
+
+{"role":"assistant","content":"Only the parser layer is changing in this step.","messageId":"variant-2","parentId":"variant-1","sessionId":"claude-code-variant","timestamp":"2026-04-17T13:00:35+00:00","model":"claude-3-7-sonnet-20250219","tool":"plan"}

@@ -1,0 +1,240 @@
+.diagnostics-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.diagnostics-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.diagnostics-subtitle {
+  margin: 8px 0 0;
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.diagnostics-refresh-button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: #0f172a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.diagnostics-refresh-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.diagnostics-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.diagnostics-tabs button {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.diagnostics-tabs button.is-active {
+  background: #0f172a;
+  color: #fff;
+}
+
+.diagnostics-panel {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.diagnostics-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.diagnostics-panel-copy {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.78);
+}
+
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.diagnostics-card,
+.diagnostics-query-detail,
+.diagnostics-query-item,
+.diagnostics-failure {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.diagnostics-card {
+  padding: 16px;
+}
+
+.diagnostics-card h3,
+.diagnostics-failure h3 {
+  margin: 0 0 10px;
+}
+
+.diagnostics-card dl,
+.diagnostics-query-detail dl,
+.diagnostics-detail-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.diagnostics-card dl div,
+.diagnostics-query-detail dl div,
+.diagnostics-detail-list div {
+  display: grid;
+  gap: 4px;
+}
+
+.diagnostics-card dt,
+.diagnostics-query-detail dt,
+.diagnostics-detail-list dt {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.54);
+}
+
+.diagnostics-card dd,
+.diagnostics-query-detail dd,
+.diagnostics-detail-list dd {
+  margin: 0;
+  color: #0f172a;
+}
+
+.diagnostics-query-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.diagnostics-query-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diagnostics-query-item {
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.diagnostics-query-item.is-active {
+  border-color: rgba(15, 23, 42, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.15);
+}
+
+.diagnostics-query-title {
+  display: block;
+  font-weight: 600;
+}
+
+.diagnostics-query-meta {
+  display: block;
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.64);
+  font-size: 14px;
+}
+
+.diagnostics-query-detail {
+  padding: 16px;
+  min-height: 220px;
+}
+
+.diagnostics-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.diagnostics-filter-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: rgba(15, 23, 42, 0.78);
+}
+
+.diagnostics-filter-grid input {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.diagnostics-status {
+  font-size: 14px;
+}
+
+.diagnostics-status--success {
+  color: #0f766e;
+}
+
+.diagnostics-status--warning {
+  color: #b45309;
+}
+
+.diagnostics-status--error {
+  color: #b91c1c;
+}
+
+.diagnostics-failures-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.diagnostics-failure {
+  padding: 16px;
+}
+
+.diagnostics-failure--error {
+  border-color: rgba(185, 28, 28, 0.28);
+}
+
+.diagnostics-failure--warning {
+  border-color: rgba(180, 83, 9, 0.28);
+}
+
+.diagnostics-empty,
+.diagnostics-error {
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.diagnostics-error {
+  color: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .diagnostics-page-header {
+    flex-direction: column;
+  }
+
+  .diagnostics-query-layout {
+    grid-template-columns: 1fr;
+  }
+}

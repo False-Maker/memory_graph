@@ -1,0 +1,37 @@
+{
+  "slackExportVersion": "2026.04",
+  "messages": [
+    {
+      "type": "channel_join",
+      "ts": "1713345000.000000",
+      "text": "joined the channel"
+    },
+    {
+      "type": "message",
+      "ts": "1713345060.000000",
+      "thread_ts": "1713345060.000000",
+      "text": "Can we ship after tonight's smoke run?",
+      "blocks": [
+        {
+          "type": "rich_text"
+        }
+      ],
+      "username": "Casey",
+      "channel": "release"
+    },
+    {
+      "type": "message",
+      "ts": "1713345120.000000",
+      "thread_ts": "1713345060.000000",
+      "text": "Yes, if health and rollback evidence both pass.",
+      "blocks": [
+        {
+          "type": "rich_text"
+        }
+      ],
+      "username": "ReleaseBot",
+      "bot_id": "B234",
+      "channel": "release"
+    }
+  ]
+}

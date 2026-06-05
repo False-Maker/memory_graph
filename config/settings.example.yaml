@@ -1,0 +1,187 @@
+# Memory Graph 配置文件
+# 复制此文件为 settings.yaml 并填入你的配置
+
+# ============================================
+# 对话采集配置
+# ============================================
+collectors:
+  # 方案1：通用文件监控（推荐）
+  # 扫描任意目录，自动识别对话格式
+  file_watcher:
+    enabled: true
+    
+    # 👇 用户只需要填这两个配置 👇
+    
+    # 扫描的根目录（可以填多个）
+    watch_paths: 
+      - "C:/Users/wangx/.cursor/projects"
+      - "D:/Projects"
+    
+    # 只匹配这些子目录/文件（通配符）
+    # Cursor: "**/agent-transcripts/**"
+    # Windsurf: "**/.windsurf/**"
+    # Aider: "**/.aider.chat.history"
+    include_patterns:
+      - "**/agent-transcripts/**"   # Cursor
+      - "**/.windsurf/**"            # Windsurf
+      - "**/chat-history/**"         # 通用
+      - "**/.aider.chat.history"     # Aider
+    
+    # 忽略这些目录
+    ignore_patterns:
+      - "**/node_modules/**"
+      - "**/.git/**"
+      - "**/__pycache__/**"
+      - "**/mcps/**"                 # Cursor MCP 配置目录
+    
+    # 支持的文件格式（会自动检测格式，不用改）
+    supported_extensions:
+      - ".txt"
+      - ".json"
+      - ".jsonl"
+      - ".md"
+
+    # 启动时扫描现有文件
+    scan_existing_on_start: true
+    
+    # 递归扫描子目录
+    recursive: true
+    
+    # 防抖延迟（秒），避免文件正在写入时读取
+    debounce_seconds: 2
+
+  # 正式支持的高优先级 AI IDE collectors
+  windsurf:
+    enabled: true
+    data_dir: "~/.codeium/windsurf"
+    auto_scan_interval: 300
+    watch_projects: []
+
+  claude_code:
+    enabled: true
+    data_dir: "~/.claude"
+    auto_scan_interval: 60
+    project_dirs: []
+    watch_terminal: false
+
+  aider:
+    enabled: true
+    auto_scan_interval: 60
+    project_dirs: []
+
+  # 实验态 collectors：默认保留配置入口，但不作为当前主链路支持面
+  cline:
+    enabled: false
+    extension_path: "~/.vscode/extensions/saoudrizwan.claude-dev"
+    auto_scan_interval: 300
+    project_dirs: []
+
+  opencode:
+    enabled: false
+    data_dir: "~/.opencode"
+    auto_scan_interval: 300
+    project_dirs: []
+    use_acp: true
+
+  antigravity:
+    enabled: false
+    data_dir: "~/.antigravity"
+    auto_scan_interval: 300
+    project_dirs: []
+
+  trace:
+    enabled: false
+    data_dir: "~/.trace"
+    auto_scan_interval: 300
+    project_dirs: []
+
+  augment:
+    enabled: false
+    data_dir: "~/.augment"
+    auto_scan_interval: 300
+    project_dirs: []
+
+# ============================================
+# LLM 配置
+# ============================================
+llm:
+  provider: "openai"
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    model: "gpt-4o"
+    base_url: "https://api.openai.com/v1"
+
+# ============================================
+# Advanced Configuration
+# ============================================
+advanced:
+  community_detection:
+    enabled: true
+    algorithm: "leiden"  # leiden | louvain
+    resolution: 1.0      # Higher = more communities
+    max_levels: 5        # Max hierarchy depth
+    min_community_size: 5  # Minimum entities per community
+
+memory_layers:
+  enabled: true
+  default_layer: "auto"
+  identity:
+    profile_text: ""
+  l0:
+    max_tokens: 120
+  l1:
+    max_tokens: 700
+    max_entities: 12
+    max_communities: 4
+    max_pinned_memories: 6
+  l2:
+    max_tokens: 400
+    default_top_k: 5
+  l3:
+    enabled: true
+    max_tokens: 1200
+    default_strategy: "hybrid"
+
+# ============================================
+# Embedding 配置
+# ============================================
+embedding:
+  model: "Qwen/Qwen3-Embedding-0.6B"
+  dimensions: 1024
+  provider_preference: "local_first"
+  cloud_model: "text-embedding-3-small"
+  cloud_dimensions: 2048
+  cloud_api_key: "${OPENAI_API_KEY}"
+  cloud_base_url: "https://api.openai.com/v1"
+
+# ============================================
+# 存储配置
+# ============================================
+database:
+  vector:
+    type: "faiss"
+    faiss:
+      persist_directory: "./data/faiss"
+
+# ============================================
+# 应用配置
+# ============================================
+app:
+  host: "0.0.0.0"
+  port: 8000
+  environment: "${ENVIRONMENT:development}"
+  api_auth_enabled: true
+  api_token: "${MEMORY_GRAPH_API_TOKEN}"
+  docs_enabled: false
+  max_upload_bytes: 10485760
+  allowed_file_roots:
+    - "./data/imports"
+  cors:
+    allow_origins:
+      - "http://localhost:3000"
+      - "http://127.0.0.1:3000"
+      - "http://localhost:4173"
+      - "http://127.0.0.1:4173"
+      - "http://localhost:5173"
+      - "http://127.0.0.1:5173"
+    allow_credentials: true
